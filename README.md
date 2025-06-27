@@ -15,7 +15,7 @@ Welcome to the Spice of Life restaurant delivery app! This is a simple web-based
 - GitHub Pages for hosting
 
 ## 🔗 Live Site
-[Click here to visit the live app](https://killerkrishna69.github.io/deliveryapp)
+[Click here to visit the live app](https://killerkrishna69.github.io/delivery)
 
 ## 📂 Project Structure
 
