@@ -125,7 +125,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-
+  
     const firebaseConfig = {
       apiKey: "AIzaSyBN0r1XX_sIIpb-b2GtgCo_RFEWUqVv0W4",
       authDomain: "restaurant-delivery-app-ede1e.firebaseapp.com",
@@ -135,21 +135,21 @@
       appId: "1:1055516872227:web:40b937f5fb9f8656cf6b96",
       measurementId: "G-LMSRCB7YEG"
     };
-
+  
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
+  
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
     const cartContainer = document.getElementById("cartContainer");
     const subtotalEl = document.getElementById("subtotal");
     const deliveryEl = document.getElementById("delivery");
     const totalEl = document.getElementById("total");
-
+  
     let subtotal = 0;
-
+  
     cart.forEach(item => {
       subtotal += item.price * item.quantity;
-
+  
       const card = document.createElement("div");
       card.className = "cart-item";
       card.innerHTML = `
@@ -162,43 +162,64 @@
       `;
       cartContainer.appendChild(card);
     });
-
+  
     const DELIVERY = subtotal > 500 ? 0 : 100;
-
+    const TOTAL = subtotal + DELIVERY;
+  
     subtotalEl.innerText = `₹${subtotal}`;
     deliveryEl.innerText = `₹${DELIVERY}`;
-    totalEl.innerText = `₹${subtotal + DELIVERY}`;
-
-    document.getElementById("placeOrderBtn").addEventListener("click", async () => {
+    totalEl.innerText = `₹${TOTAL}`;
+  
+    document.getElementById("placeOrderBtn").addEventListener("click", () => {
       const address = document.getElementById("address").value.trim();
       const phone = document.getElementById("phone").value.trim();
-
+  
       if (!address || !phone) {
         alert("Please enter both address and phone.");
         return;
       }
-
-      const order = {
-        items: cart,
-        address,
-        phone,
-        deliveryCharge: DELIVERY,
-        totalAmount: subtotal + DELIVERY,
-        time: new Date().toLocaleString(),
-        status: "Pending"
+  
+      const options = {
+        key: "rzp_test_0sdTNWJkOYiNpx",
+        amount: TOTAL * 100, // Razorpay uses paise
+        currency: "INR",
+        name: "A Spice of Life",
+        description: "Food Order Payment",
+        handler: async function (response) {
+          const order = {
+            items: cart,
+            address,
+            phone,
+            deliveryCharge: DELIVERY,
+            totalAmount: TOTAL,
+            time: new Date().toLocaleString(),
+            status: "Paid",
+            paymentId: response.razorpay_payment_id
+          };
+  
+          try {
+            await addDoc(collection(db, "orders"), order);
+            localStorage.removeItem("cart");
+            window.location.href = "success.html";
+          } catch (err) {
+            console.error("Error saving order:", err);
+            alert("Payment succeeded, but something went wrong while saving order.");
+          }
+        },
+        prefill: {
+          contact: phone
+        },
+        theme: {
+          color: "#FF5A00"
+        }
       };
-
-      try {
-        await addDoc(collection(db, "orders"), order);
-        
-        localStorage.removeItem("cart");
-        window.location.href = "success.html";
-      } catch (err) {
-        console.error("Error placing order:", err);
-        alert("Something went wrong. Try again.");
-      }
+  
+      const rzp = new Razorpay(options);
+      rzp.open();
     });
   </script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  
 
 </body>
 </html>
